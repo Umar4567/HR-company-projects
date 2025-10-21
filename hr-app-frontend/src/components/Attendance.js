@@ -130,7 +130,7 @@ const Attendance = () => {
                 <th style={styles.th}>Check In</th>
                 <th style={styles.th}>Check Out</th>
                 <th style={styles.th}>Hours Worked</th>
-                <th style={styles.th}>Status</th>
+                <th style={{ ...styles.th, ...styles.statusHeader }}>Status</th>
                 <th style={styles.th}>Check In Location</th>
                 <th style={styles.th}>Check Out Location</th>
               </tr>
@@ -150,7 +150,7 @@ const Attendance = () => {
                     <td style={styles.td}>{formatTime(record.checkIn)}</td>
                     <td style={styles.td}>{formatTime(record.checkOut)}</td>
                     <td style={styles.td}>{record.hoursWorked || 0}</td>
-                    <td style={styles.td}>
+                    <td style={{ ...styles.td, ...styles.statusCell }}>
                       <span style={getStatusStyle(record.status)}>
                         {record.status || 'N/A'}
                       </span>
@@ -234,68 +234,72 @@ const styles = {
     display: 'flex',
     gap: '1rem',
     alignItems: 'center'
-      backgroundColor: 'white',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-      fontFamily: "Inter, Roboto, -apple-system, 'Segoe UI', Arial",
-      fontSize: '14px'
+  },
+  filterInput: {
     padding: '8px',
     border: '1px solid #ddd',
     borderRadius: '4px'
   },
-  filterButton: {
-      backgroundColor: '#f3f4f6',
+    padding: '8px 16px',
     backgroundColor: '#007bff',
+  statusHeader: {
+    minWidth: '120px'
+  },
+  statusCell: {
+    minWidth: '120px',
+    whiteSpace: 'nowrap'
+  },
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer'
   },
   tableContainer: {
-    overflowX: 'auto'
+    overflowX: 'auto',
+    borderRadius: '8px',
+    border: '1px solid #e6e9ee',
+    background: '#fff'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
     backgroundColor: 'white',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+    boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+    fontFamily: "Inter, Roboto, -apple-system, 'Segoe UI', Arial",
+    fontSize: '14px'
   },
   th: {
     border: '1px solid #ddd',
     padding: '12px',
     textAlign: 'left',
-    backgroundColor: '#f8f9fa',
-    fontWeight: 'bold'
+    backgroundColor: '#f3f4f6',
+    fontWeight: 'bold',
+    position: 'sticky',
+    top: 0,
+    zIndex: 2
   },
   td: {
-    border: '1px solid #ddd',
-    padding: '12px'
-  }
-  ,
-    rowEven: {
-      backgroundColor: '#ffffff'
-    },
-    rowOdd: {
-      backgroundColor: '#fbfbfc'
-    },
-    tableContainer: {
-      overflowX: 'auto',
-      borderRadius: '8px',
-      border: '1px solid #e6e9ee',
-      background: '#fff'
-    },
-    // small responsive tweaks
-    '@media (max-width: 800px)': {
-      table: { fontSize: '13px' }
-    }
+    border: '1px solid #eee',
+    padding: '12px',
+    verticalAlign: 'top'
+  },
+  rowEven: {
+    backgroundColor: '#ffffff'
+  },
+  rowOdd: {
+    backgroundColor: '#fbfbfc'
+  },
   locationCell: {
     maxWidth: '220px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap'
-  }
-  ,
+  },
   tooltip: {
     position: 'absolute',
+    left: 0,
+    top: '100%',
+    transform: 'translateY(6px)',
     backgroundColor: 'rgba(0,0,0,0.85)',
     color: 'white',
     padding: '8px 10px',
@@ -303,7 +307,6 @@ const styles = {
     fontSize: '13px',
     maxWidth: '320px',
     zIndex: 50,
-    marginTop: '6px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
     whiteSpace: 'normal'
   }
