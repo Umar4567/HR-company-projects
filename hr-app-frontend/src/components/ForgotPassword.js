@@ -7,7 +7,6 @@ const ForgotPassword = ({ onBackToLogin, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [previewUrl, setPreviewUrl] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,16 +23,9 @@ const ForgotPassword = ({ onBackToLogin, onSuccess }) => {
       console.log('Forgot password response:', response);
 
       // Response may be an object (JSON) or plain text depending on server/proxy errors
-      // Reset previous preview
-      setPreviewUrl(null);
       if (response && typeof response === 'object') {
         if (response.message) setSuccess(response.message);
         else setSuccess('Password reset link sent successfully! Check your email.');
-
-        // Only surface preview URL separately (for local testing)
-        if (response.previewUrl) {
-          setPreviewUrl(response.previewUrl);
-        }
       } else if (typeof response === 'string') {
         // Plain text response (maybe HTML) - show small length-limited snippet to help debugging
         setSuccess(`Server response: ${response.slice(0, 300)}${response.length > 300 ? '... (truncated)' : ''}`);
@@ -74,17 +66,6 @@ const ForgotPassword = ({ onBackToLogin, onSuccess }) => {
         {success && (
           <div style={styles.success}>
             <strong>Success:</strong> {success}
-            {previewUrl && (
-              <div style={{ marginTop: 8, fontSize: 14 }}>
-                <a href={previewUrl} target="_blank" rel="noopener noreferrer">Open preview email</a>
-                <button
-                  onClick={() => { navigator.clipboard && navigator.clipboard.writeText(previewUrl); }}
-                  style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}
-                >
-                  Copy link
-                </button>
-              </div>
-            )}
           </div>
         )}
 
