@@ -38,10 +38,6 @@ const attendanceSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  // store employee name redundantly to simplify queries and frontend display
-  name: {
-    type: String
-  },
   checkOut: {
     type: Date
   },
@@ -53,6 +49,11 @@ const attendanceSchema = new mongoose.Schema({
     type: String,
     enum: ['present', 'absent', 'late', 'half-day'],
     default: 'present'
+  },
+  // Mark records that were auto-checked-out by the server
+  autoCheckedOut: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

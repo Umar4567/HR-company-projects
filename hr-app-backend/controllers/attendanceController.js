@@ -71,6 +71,10 @@ const checkIn = async (req, res) => {
       checkInLocationName: locationName || undefined
     });
 
+    // ensure manual checkins are not marked as auto-checked-out
+    attendance.autoCheckedOut = false;
+    await attendance.save();
+
     await attendance.populate('employee', 'name employeeId department');
 
     res.status(201).json({
@@ -154,6 +158,9 @@ const checkOut = async (req, res) => {
     } else {
       attendance.status = 'absent';
     }
+
+    // Manual checkout: ensure autoCheckedOut is false
+    attendance.autoCheckedOut = false;
 
     await attendance.save();
     await attendance.populate('employee', 'name employeeId department');
@@ -511,7 +518,8 @@ const autoCheckoutOverdue = async (thresholdHours = 8) => {
         else rec.status = 'absent';
 
         // mark checkout location as automated
-        rec.checkOutLocationName = rec.checkOutLocationName || 'Auto-checked-out';
+  rec.checkOutLocationName = rec.checkOutLocationName || 'Auto-checked-out';
+  rec.autoCheckedOut = true;
 
         await rec.save();
         console.log(`Auto-checked-out attendance ${rec._id} for employee ${rec.employee}`);
