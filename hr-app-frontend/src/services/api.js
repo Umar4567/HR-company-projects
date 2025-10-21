@@ -20,10 +20,30 @@ const apiRequest = async (endpoint, options = {}) => {
     console.log(`API Call: ${config.method || 'GET'} ${API_BASE_URL}${endpoint}`);
     
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
+    // Be defensive: some error responses (or proxy/server fallbacks) may return HTML or plain text
+    const contentType = response.headers.get('content-type') || '';
+    const text = await response.text();
+
+    let data = null;
+    if (contentType.includes('application/json')) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        // fall back to raw text if JSON.parse fails
+        data = text;
+      }
+    } else {
+      // Not JSON - return the raw text (could be HTML error page)
+      data = text;
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      // If parsed JSON contains message, prefer it
+      const errMsg = data && typeof data === 'object' && data.message ? data.message : (typeof data === 'string' ? data : `HTTP error! status: ${response.status}`);
+      const error = new Error(errMsg);
+      error.status = response.status;
+      error.raw = data;
+      throw error;
     }
 
     return data;

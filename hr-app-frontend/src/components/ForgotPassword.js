@@ -19,10 +19,25 @@ const ForgotPassword = ({ onBackToLogin, onSuccess }) => {
       
       // Correct way to call the API
       const response = await authAPI.forgotPassword({ email: email });
-      
+
       console.log('Forgot password response:', response);
-      
-      setSuccess(response.message || 'Password reset link sent successfully! Check your email.');
+
+      // Response may be an object (JSON) or plain text depending on server/proxy errors
+      if (response && typeof response === 'object') {
+        // Prefer previewUrl if present (Ethereal development helper)
+        if (response.previewUrl) {
+          setSuccess(`Password reset link sent (preview available). Preview: ${response.previewUrl}`);
+        } else if (response.message) {
+          setSuccess(response.message);
+        } else {
+          setSuccess('Password reset link sent successfully! Check your email.');
+        }
+      } else if (typeof response === 'string') {
+        // Plain text response (maybe HTML) - show small length-limited snippet to help debugging
+        setSuccess(`Server response: ${response.slice(0, 300)}${response.length > 300 ? '... (truncated)' : ''}`);
+      } else {
+        setSuccess('Password reset link sent successfully! Check your email.');
+      }
       
     } catch (error) {
       console.error('Forgot password error:', error);
