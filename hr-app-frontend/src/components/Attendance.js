@@ -9,7 +9,8 @@ const Attendance = () => {
   const [hoverLocation, setHoverLocation] = useState({ id: null, type: null });
   const [filters, setFilters] = useState({
     startDate: '',
-    endDate: ''
+    endDate: '',
+    name: ''
   });
   const [resultsCount, setResultsCount] = useState(null);
 
@@ -98,11 +99,19 @@ const Attendance = () => {
             onChange={handleFilterChange}
             style={styles.filterInput}
           />
+          <input
+            type="text"
+            name="name"
+            placeholder="Employee name"
+            value={filters.name}
+            onChange={handleFilterChange}
+            style={{ ...styles.filterInput, minWidth: '180px' }}
+          />
           <div style={{display:'flex',gap:'8px'}}>
             <button type="submit" style={styles.filterButton} disabled={loading}>
               {loading ? 'Applying...' : 'Apply Filters'}
             </button>
-            <button type="button" style={{...styles.filterButton, backgroundColor:'#6c757d'}} onClick={() => { setFilters({ startDate: '', endDate: '' }); fetchAttendance(); }}>
+            <button type="button" style={{...styles.filterButton, backgroundColor:'#6c757d'}} onClick={() => { setFilters({ startDate: '', endDate: '', name: '' }); fetchAttendance(); }}>
               Reset
             </button>
           </div>
