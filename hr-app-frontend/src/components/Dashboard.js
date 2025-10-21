@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [todayAttendance, setTodayAttendance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [autoNotice, setAutoNotice] = useState('');
   const [lastAddress, setLastAddress] = useState(null);
   const [lastCoords, setLastCoords] = useState(null);
   const [confirmVisible, setConfirmVisible] = useState(false);
@@ -17,13 +18,27 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Poll every 5 minutes to pick up server-side auto-checkouts
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       const response = await attendanceAPI.getDashboardStats();
+      // detect auto-checkout if previous state existed and server now reports a checkOut
       setStats(response);
+      const prev = todayAttendance;
       setTodayAttendance(response.todayAttendance);
+      if (prev && !prev.checkOut && response.todayAttendance && response.todayAttendance.checkOut) {
+        setAutoNotice('Your day was auto-checked-out by the system after 8 hours.');
+        // clear after 8 seconds
+        setTimeout(() => setAutoNotice(''), 8000);
+      }
       // prefer server-provided address; otherwise fall back to locally cached address
       if (response.todayAttendance && response.todayAttendance.address) {
         setLastAddress(response.todayAttendance.address);
@@ -236,6 +251,11 @@ const Dashboard = () => {
       {/* Today's Attendance */}
   <div className="card attendance-card" style={styles.attendanceCard}>
         <h2>Today's Attendance</h2>
+        {autoNotice && (
+          <div style={{ marginBottom: 8, padding: '8px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: 4 }}>
+            {autoNotice}
+          </div>
+        )}
         <div style={styles.attendanceInfo}>
           <p><strong>Check In:</strong> {formatTime(todayAttendance?.checkIn)}</p>
           <p><strong>Check Out:</strong> {formatTime(todayAttendance?.checkOut)}</p>
