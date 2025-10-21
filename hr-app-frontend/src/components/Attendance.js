@@ -137,8 +137,8 @@ const Attendance = () => {
             </thead>
             <tbody>
               {attendance && attendance.length > 0 ? (
-                  attendance.map((record) => (
-                    <tr key={record._id}>
+                  attendance.map((record, idx) => (
+                    <tr key={record._id} style={idx % 2 === 0 ? styles.rowEven : styles.rowOdd}>
                     {user.role === 'admin' && (
                       <>
                         <td style={styles.td}>{record.employee?.employeeId || 'N/A'}</td>
@@ -155,26 +155,30 @@ const Attendance = () => {
                         {record.status || 'N/A'}
                       </span>
                     </td>
-                    <td
-                      style={styles.td}
-                      onMouseEnter={() => setHoverLocation({ id: record._id, type: 'in' })}
-                      onMouseLeave={() => setHoverLocation({ id: null, type: null })}
-                    >
-                      <div style={styles.locationCell}>{record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude ? `${record.checkInLatitude.toFixed(5)}, ${record.checkInLongitude.toFixed(5)}` : 'N/A')}</div>
+                    <td style={{ ...styles.td, position: 'relative' }}>
+                      <div
+                        style={styles.locationCell}
+                        onMouseEnter={() => setHoverLocation({ id: record._id, type: 'in' })}
+                        onMouseLeave={() => setHoverLocation({ id: null, type: null })}
+                      >
+                        {record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude ? `${record.checkInLatitude.toFixed(5)}, ${record.checkInLongitude.toFixed(5)}` : 'N/A')}
+                      </div>
                       {hoverLocation.id === record._id && hoverLocation.type === 'in' && (record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude)) && (
-                        <div style={styles.tooltip}>
+                        <div style={styles.tooltip} role="tooltip">
                           {record.checkInLocationName || `${record.checkInLatitude.toFixed(6)}, ${record.checkInLongitude.toFixed(6)}`}
                         </div>
                       )}
                     </td>
-                    <td
-                      style={styles.td}
-                      onMouseEnter={() => setHoverLocation({ id: record._id, type: 'out' })}
-                      onMouseLeave={() => setHoverLocation({ id: null, type: null })}
-                    >
-                      <div style={styles.locationCell}>{record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude ? `${record.checkOutLatitude.toFixed(5)}, ${record.checkOutLongitude.toFixed(5)}` : 'N/A')}</div>
+                    <td style={{ ...styles.td, position: 'relative' }}>
+                      <div
+                        style={styles.locationCell}
+                        onMouseEnter={() => setHoverLocation({ id: record._id, type: 'out' })}
+                        onMouseLeave={() => setHoverLocation({ id: null, type: null })}
+                      >
+                        {record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude ? `${record.checkOutLatitude.toFixed(5)}, ${record.checkOutLongitude.toFixed(5)}` : 'N/A')}
+                      </div>
                       {hoverLocation.id === record._id && hoverLocation.type === 'out' && (record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude)) && (
-                        <div style={styles.tooltip}>
+                        <div style={styles.tooltip} role="tooltip">
                           {record.checkOutLocationName || `${record.checkOutLatitude.toFixed(6)}, ${record.checkOutLongitude.toFixed(6)}`}
                         </div>
                       )}
@@ -230,14 +234,16 @@ const styles = {
     display: 'flex',
     gap: '1rem',
     alignItems: 'center'
-  },
-  filterInput: {
+      backgroundColor: 'white',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+      fontFamily: "Inter, Roboto, -apple-system, 'Segoe UI', Arial",
+      fontSize: '14px'
     padding: '8px',
     border: '1px solid #ddd',
     borderRadius: '4px'
   },
   filterButton: {
-    padding: '8px 16px',
+      backgroundColor: '#f3f4f6',
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
@@ -265,6 +271,22 @@ const styles = {
     padding: '12px'
   }
   ,
+    rowEven: {
+      backgroundColor: '#ffffff'
+    },
+    rowOdd: {
+      backgroundColor: '#fbfbfc'
+    },
+    tableContainer: {
+      overflowX: 'auto',
+      borderRadius: '8px',
+      border: '1px solid #e6e9ee',
+      background: '#fff'
+    },
+    // small responsive tweaks
+    '@media (max-width: 800px)': {
+      table: { fontSize: '13px' }
+    }
   locationCell: {
     maxWidth: '220px',
     overflow: 'hidden',
