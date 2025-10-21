@@ -218,7 +218,7 @@ const getMyAttendance = async (req, res) => {
 // Get all attendance function - FIXED to show ALL employees
 const getAllAttendance = async (req, res) => {
   try {
-    const { startDate, endDate, department, employeeId } = req.query;
+    const { startDate, endDate, department, employeeId, name } = req.query;
     
     // Get all employees first based on filters
     let employeeQuery = { role: 'employee' };
@@ -229,6 +229,11 @@ const getAllAttendance = async (req, res) => {
 
     if (employeeId && employeeId !== 'all') {
       employeeQuery.employeeId = employeeId;
+    }
+
+    // If name filter provided, do a case-insensitive partial match on employee name
+    if (name && String(name).trim() !== '') {
+      employeeQuery.name = { $regex: String(name).trim(), $options: 'i' };
     }
 
     const allEmployees = await User.find(employeeQuery).select('_id name employeeId department');
