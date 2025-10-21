@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { attendanceAPI } from '../services/api';
 import { getUser } from '../utils/auth';
 import ConfirmModal from './ConfirmModal';
+import getLocationAndAddress from '../utils/location';
 
 const Dashboard = () => {
   const [user] = useState(getUser());
@@ -59,70 +60,7 @@ const Dashboard = () => {
     setConfirmVisible(true);
   };
 
-  // Reverse geocode coordinates to a human-readable address using Nominatim
-  const reverseGeocode = async (latitude, longitude) => {
-    try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.display_name || (data.address && Object.values(data.address).join(', ')) || null;
-    } catch (err) {
-      console.warn('Reverse geocode failed:', err);
-      return null;
-    }
-  };
-
-  // Helper: get geolocation + reverse geocoded address (sample multiple readings)
-  const getLocationAndAddress = () => new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve({ location: null, address: null });
-
-    let best = null;
-    let samples = 0;
-    const maxSamples = 8; // sample count
-    const desiredAccuracy = 20; // meters
-    const timeoutMs = 10000; // overall timeout
-
-    const clearAndResolve = async () => {
-      try {
-        if (best) {
-          const address = await reverseGeocode(best.latitude, best.longitude).catch(() => null);
-          resolve({ location: best, address });
-        } else {
-          resolve({ location: null, address: null });
-        }
-      } catch (e) {
-        resolve({ location: best, address: null });
-      }
-    };
-
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        samples += 1;
-        const coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy };
-        console.debug('geolocation sample', coords);
-        if (!best || (coords.accuracy && coords.accuracy < (best.accuracy || Infinity))) {
-          best = coords;
-        }
-        if ((best.accuracy && best.accuracy <= desiredAccuracy) || samples >= maxSamples) {
-          try { navigator.geolocation.clearWatch(watchId); } catch (e) { }
-          clearAndResolve();
-        }
-      },
-      (err) => {
-        console.warn('Geolocation error (watch):', err);
-        try { navigator.geolocation.clearWatch(watchId); } catch (e) { }
-        resolve({ location: null, address: null });
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: timeoutMs }
-    );
-
-    // safety timeout
-    setTimeout(() => {
-      try { navigator.geolocation.clearWatch(watchId); } catch (e) { }
-      clearAndResolve();
-    }, timeoutMs + 300);
-  });
+  // Use shared getLocationAndAddress from ../utils/location.js
 
   // Called when user confirms in modal — simple flow (no map/location)
   const onConfirmModal = async () => {
@@ -130,7 +68,7 @@ const Dashboard = () => {
     setLoading(true);
     setMessage('Acquiring location...');
     try {
-      const { location, address } = await getLocationAndAddress();
+  const { location, address } = await getLocationAndAddress({ language: 'en' });
       console.debug('getLocationAndAddress result', { location, address });
       const payload = location ? { location, address } : undefined;
       if (confirmAction === 'checkin') {

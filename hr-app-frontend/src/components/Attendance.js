@@ -240,19 +240,20 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px'
   },
+  filterButton: {
     padding: '8px 16px',
     backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  },
   statusHeader: {
     minWidth: '120px'
   },
   statusCell: {
     minWidth: '120px',
     whiteSpace: 'nowrap'
-  },
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
   },
   tableContainer: {
     overflowX: 'auto',

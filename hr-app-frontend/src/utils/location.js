@@ -1,8 +1,10 @@
 // Reusable location helper used by Dashboard and Attendance
-export const reverseGeocode = async (latitude, longitude) => {
+// language: optional ISO language code (e.g. 'en', 'kn') - defaults to 'en'
+export const reverseGeocode = async (latitude, longitude, language = 'en') => {
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`;
-    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    // request JSON v2 and include address details; ask Nominatim for a specific language via Accept-Language header
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json', 'Accept-Language': language } });
     if (!res.ok) return null;
     const data = await res.json();
     return data.display_name || (data.address && Object.values(data.address).join(', ')) || null;
@@ -13,7 +15,8 @@ export const reverseGeocode = async (latitude, longitude) => {
 };
 
 // Acquire multiple high-accuracy samples and return the best reading + optional reverse geocoded address
-export const getLocationAndAddress = () => new Promise((resolve) => {
+// Accepts an optional options object: { language: 'en' }
+export const getLocationAndAddress = (options = {}) => new Promise((resolve) => {
   if (!navigator.geolocation) return resolve({ location: null, address: null });
 
   let best = null;
@@ -25,7 +28,8 @@ export const getLocationAndAddress = () => new Promise((resolve) => {
   const clearAndResolve = async () => {
     try {
       if (best) {
-        const address = await reverseGeocode(best.latitude, best.longitude).catch(() => null);
+        const lang = options.language || 'en';
+        const address = await reverseGeocode(best.latitude, best.longitude, lang).catch(() => null);
         resolve({ location: best, address });
       } else {
         resolve({ location: null, address: null });
