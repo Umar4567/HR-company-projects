@@ -256,22 +256,38 @@ const resetPassword = async (req, res) => {
 // Email sending function - FIXED (corrected function name)
 const sendPasswordResetEmail = async (email, resetUrl) => {
   try {
-    // For development - use Ethereal.email
+    // For development use Ethereal test account when no SMTP config provided
     const testAccount = await nodemailer.createTestAccount();
 
-    // CORRECTED: createTransport (not createTransporter)
-    const transporter = nodemailer.createTransport({
-      host: 'Gmail',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'umarahmed4567@gmail.com',
-        pass: 'Umar7890',
-      },
-    });
+    // Allow SMTP configuration via environment variables for production
+    // Expected env vars: SMTP_HOST, SMTP_PORT, SMTP_SECURE (true/false), SMTP_USER, SMTP_PASS, EMAIL_FROM
+    let transporter;
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587', 10),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+    } else {
+      // Use Ethereal test SMTP for development / local testing
+      transporter = nodemailer.createTransport({
+        host: testAccount.smtp.host,
+        port: testAccount.smtp.port,
+        secure: testAccount.smtp.secure,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
+        }
+      });
+      console.log('Using Ethereal test account for sending email. Preview URL will be logged.');
+    }
 
     const mailOptions = {
-      from: '"HR System" <umarahmed4567@gmail.com>',
+      from: process.env.EMAIL_FROM || '"HR System" <no-reply@example.com>',
       to: email,
       subject: 'Password Reset Request - HR System',
       html: `
