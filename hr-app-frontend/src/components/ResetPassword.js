@@ -28,15 +28,25 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const response = await authAPI.resetPassword(token, password);
-      setMessage(response.message);
+      // send as object so backend JSON body parser receives { password }
+      const response = await authAPI.resetPassword(token, { password });
+      // response may be object or string
+      if (response && typeof response === 'object' && response.message) setMessage(response.message);
+      else if (typeof response === 'string') setMessage(response);
+      else setMessage('Password reset successful.');
       
       // Redirect to login after 3 seconds
       setTimeout(() => {
         navigate('/');
       }, 3000);
     } catch (error) {
-      setError(error.message || 'Something went wrong');
+      // If apiRequest attached raw response, show it for debugging
+      if (error && error.raw) {
+        const raw = typeof error.raw === 'string' ? error.raw : JSON.stringify(error.raw);
+        setError(raw.slice(0, 1000));
+      } else {
+        setError(error.message || 'Something went wrong');
+      }
     } finally {
       setLoading(false);
     }
