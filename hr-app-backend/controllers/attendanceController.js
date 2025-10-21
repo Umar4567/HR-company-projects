@@ -484,3 +484,45 @@ module.exports = {
   getAllAttendance,
   getDashboardStats
 };
+
+// Automatic checkout helper - finds check-ins older than thresholdHours and checks them out
+// This is safe to call periodically from server startup.
+const autoCheckoutOverdue = async (thresholdHours = 8) => {
+  try {
+    const cutoff = new Date(Date.now() - thresholdHours * 60 * 60 * 1000);
+
+    // Find attendances that have checkIn set, no checkOut, and checkIn older than cutoff
+    const overdue = await Attendance.find({
+      checkIn: { $exists: true, $ne: null, $lte: cutoff },
+      checkOut: { $exists: false }
+    });
+
+    for (const rec of overdue) {
+      try {
+        const checkOutTime = new Date(rec.checkIn.getTime() + thresholdHours * 60 * 60 * 1000);
+        rec.checkOut = checkOutTime;
+
+        let hoursWorked = (rec.checkOut - rec.checkIn) / (1000 * 60 * 60);
+        if (hoursWorked > 5) hoursWorked -= 1; // lunch deduction as in checkout
+        rec.hoursWorked = parseFloat(hoursWorked.toFixed(2));
+
+        if (hoursWorked >= 4) rec.status = 'present';
+        else if (hoursWorked > 0) rec.status = 'half-day';
+        else rec.status = 'absent';
+
+        // mark checkout location as automated
+        rec.checkOutLocationName = rec.checkOutLocationName || 'Auto-checked-out';
+
+        await rec.save();
+        console.log(`Auto-checked-out attendance ${rec._id} for employee ${rec.employee}`);
+      } catch (e) {
+        console.error('Auto-checkout failed for record', rec._id, e.message);
+      }
+    }
+  } catch (error) {
+    console.error('Error running autoCheckoutOverdue:', error.message);
+  }
+};
+
+// Export helper for server to call
+module.exports.autoCheckoutOverdue = autoCheckoutOverdue;

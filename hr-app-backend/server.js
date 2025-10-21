@@ -62,3 +62,10 @@ app.listen(PORT, () => {
   console.log(`🌐 API URL: http://localhost:${PORT}`);
   console.log(`❤️  Health check: http://localhost:${PORT}/api/health`);
 });
+
+// Start a background job to auto-checkout employees after 8 hours
+const { autoCheckoutOverdue } = require('./controllers/attendanceController');
+
+// Run once at startup, then every 5 minutes
+autoCheckoutOverdue(8);
+setInterval(() => autoCheckoutOverdue(8), 5 * 60 * 1000);
