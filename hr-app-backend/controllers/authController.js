@@ -169,12 +169,16 @@ const forgotPassword = async (req, res) => {
     console.log('Password Reset URL:', resetUrl);
 
     try {
-      // Send email
-      await sendPasswordResetEmail(user.email, resetUrl);
-      
+      // Send email and capture nodemailer info (info may include Ethereal preview URL)
+      const info = await sendPasswordResetEmail(user.email, resetUrl);
+      const previewUrl = info && typeof nodemailer.getTestMessageUrl === 'function'
+        ? nodemailer.getTestMessageUrl(info)
+        : null;
+
       res.json({ 
         message: 'If an account with that email exists, a password reset link has been sent.',
-        resetUrl: resetUrl // Remove this in production
+        resetUrl: resetUrl, // Remove this in production
+        previewUrl: previewUrl // present only when using Ethereal/test SMTP
       });
     } catch (emailError) {
       console.error('Email error:', emailError);
