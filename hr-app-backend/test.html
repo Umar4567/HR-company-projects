@@ -1,0 +1,50 @@
+const mongoose = require('mongoose');
+const User = require('./models/User');
+require('dotenv').config();
+
+const createTestUser = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: 'admin@hr.com' });
+    
+    if (existingUser) {
+      console.log('Test user already exists:', existingUser.email);
+      process.exit(0);
+    }
+
+    // Create test users
+    const users = await User.create([
+      {
+        employeeId: 'ADM001',
+        name: 'HR Admin',
+        email: 'admin@hr.com',
+        password: 'admin123',
+        department: 'HR',
+        role: 'admin'
+      },
+      {
+        employeeId: 'EMP001',
+        name: 'John Employee',
+        email: 'john@hr.com',
+        password: 'password123',
+        department: 'IT',
+        role: 'employee'
+      }
+    ]);
+
+    console.log('✅ Test users created successfully:');
+    users.forEach(user => {
+      console.log(`- ${user.name} (${user.email}) - Role: ${user.role}`);
+    });
+    
+    process.exit(0);
+  } catch (error) {
+    console.error('Error creating test users:', error);
+    process.exit(1);
+  }
+};
+
+createTestUser();
