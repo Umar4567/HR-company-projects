@@ -1,0 +1,11 @@
+# Normalise line endings
+* text=auto
+
+# Keep package-lock.json consistent
+*.json text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
