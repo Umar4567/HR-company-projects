@@ -34,10 +34,20 @@ const Dashboard = () => {
       setStats(response);
       const prev = todayAttendance;
       setTodayAttendance(response.todayAttendance);
-      if (prev && !prev.checkOut && response.todayAttendance && response.todayAttendance.checkOut) {
-        setAutoNotice('Your day was auto-checked-out by the system after 8 hours.');
-        // clear after 8 seconds
-        setTimeout(() => setAutoNotice(''), 8000);
+      // Only show auto-checkout notice if the server marked the record as auto-checked-out
+      // (auto job sets checkOutLocationName = 'Auto-checked-out')
+      if (
+        prev &&
+        !prev.checkOut &&
+        response.todayAttendance &&
+        response.todayAttendance.checkOut
+      ) {
+        const locName = (response.todayAttendance.checkOutLocationName || '').toString().toLowerCase();
+        if (locName.includes('auto')) {
+          setAutoNotice('Your day was auto-checked-out by the system after 8 hours.');
+          // clear after 8 seconds
+          setTimeout(() => setAutoNotice(''), 8000);
+        }
       }
       // prefer server-provided address; otherwise fall back to locally cached address
       if (response.todayAttendance && response.todayAttendance.address) {
