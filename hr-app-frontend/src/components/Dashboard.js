@@ -42,8 +42,8 @@ const Dashboard = () => {
         response.todayAttendance &&
         response.todayAttendance.checkOut
       ) {
-        const locName = (response.todayAttendance.checkOutLocationName || '').toString().toLowerCase();
-        if (locName.includes('auto')) {
+        // Prefer the explicit boolean flag set by the server for automated checkouts.
+        if (response.todayAttendance.autoCheckedOut) {
           setAutoNotice('Your day was auto-checked-out by the system after 8 hours.');
           // clear after 8 seconds
           setTimeout(() => setAutoNotice(''), 8000);
@@ -92,15 +92,19 @@ const Dashboard = () => {
     setConfirmVisible(false);
     setLoading(true);
     setMessage('Acquiring location...');
+    const action = confirmAction; // capture the action before it may change
     try {
-  const { location, address } = await getLocationAndAddress({ language: 'en' });
+      const { location, address } = await getLocationAndAddress({ language: 'en' });
       console.debug('getLocationAndAddress result', { location, address });
+
+      
+
       const payload = location ? { location, address } : undefined;
-      if (confirmAction === 'checkin') {
+      if (action === 'checkin') {
         const response = await attendanceAPI.checkIn(payload);
         setTodayAttendance(response.attendance);
         setMessage(address ? `Checked in: ${address}` : 'Checked in successfully');
-      } else if (confirmAction === 'checkout') {
+      } else if (action === 'checkout') {
         const response = await attendanceAPI.checkOut(payload);
         setTodayAttendance(response.attendance);
         setMessage(address ? `Checked out: ${address}` : 'Checked out successfully');
@@ -114,16 +118,18 @@ const Dashboard = () => {
         setLastAddress(address);
       }
       fetchDashboardData();
+      setConfirmAction(null);
     } catch (err) {
       console.error('Attendance error:', err);
-      // apiRequest throws Error with message, but also the original error may include response body
       const serverMsg = err.message || err.response?.data?.message;
       setMessage(serverMsg || 'Error finalizing attendance (see console)');
     } finally {
       setLoading(false);
-      setConfirmAction(null);
+      // don't clear confirmAction here; it's cleared after successful send or by retry/proceed handlers
     }
   };
+
+  
 
   const onCancelModal = () => {
     setConfirmVisible(false);
@@ -471,6 +477,7 @@ const styles = {
     margin: '0 10px',
     transition: 'background-color 0.2s ease'
   },
+  
   completedText: {
     color: '#28a745',
     fontSize: '18px',

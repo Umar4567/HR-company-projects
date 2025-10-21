@@ -6,6 +6,7 @@ const Attendance = () => {
   const [user] = useState(getUser());
   const [attendance, setAttendance] = useState([]); // Initialize as empty array
   const [loading, setLoading] = useState(false);
+  // hover tooltip state (shows full location on hover)
   const [hoverLocation, setHoverLocation] = useState({ id: null, type: null });
   const [filters, setFilters] = useState({
     startDate: '',
@@ -146,55 +147,63 @@ const Attendance = () => {
             </thead>
             <tbody>
               {attendance && attendance.length > 0 ? (
-                  attendance.map((record, idx) => (
-                    <tr key={record._id} style={idx % 2 === 0 ? styles.rowEven : styles.rowOdd}>
-                    {user.role === 'admin' && (
-                      <>
-                        <td style={styles.td}>{record.employee?.employeeId || 'N/A'}</td>
-                        <td style={styles.td}>{record.employee?.name || 'N/A'}</td>
-                        <td style={styles.td}>{record.employee?.department || 'N/A'}</td>
-                      </>
-                    )}
-                    <td style={styles.td}>{formatDate(record.date)}</td>
-                    <td style={styles.td}>{formatTime(record.checkIn)}</td>
-                    <td style={styles.td}>{formatTime(record.checkOut)}</td>
-                    <td style={styles.td}>{record.hoursWorked || 0}</td>
-                    <td style={{ ...styles.td, ...styles.statusCell }}>
-                      <span style={getStatusStyle(record.status)}>
-                        {record.status || 'N/A'}
-                      </span>
-                    </td>
-                    <td style={{ ...styles.td, position: 'relative' }}>
-                      <div
-                        style={styles.locationCell}
-                        onMouseEnter={() => setHoverLocation({ id: record._id, type: 'in' })}
-                        onMouseLeave={() => setHoverLocation({ id: null, type: null })}
-                      >
-                        {record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude ? `${record.checkInLatitude.toFixed(5)}, ${record.checkInLongitude.toFixed(5)}` : 'N/A')}
-                      </div>
-                      {hoverLocation.id === record._id && hoverLocation.type === 'in' && (record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude)) && (
-                        <div style={styles.tooltip} role="tooltip">
-                          {record.checkInLocationName || `${record.checkInLatitude.toFixed(6)}, ${record.checkInLongitude.toFixed(6)}`}
-                        </div>
+                attendance.map((record, idx) => (
+                  <React.Fragment key={record._id}>
+                    <tr style={idx % 2 === 0 ? styles.rowEven : styles.rowOdd}>
+                      {user.role === 'admin' && (
+                        <>
+                          <td style={styles.td}>{record.employee?.employeeId || 'N/A'}</td>
+                          <td style={styles.td}>{record.employee?.name || 'N/A'}</td>
+                          <td style={styles.td}>{record.employee?.department || 'N/A'}</td>
+                        </>
                       )}
-                    </td>
-                    <td style={{ ...styles.td, position: 'relative' }}>
-                      <div
-                        style={styles.locationCell}
-                        onMouseEnter={() => setHoverLocation({ id: record._id, type: 'out' })}
-                        onMouseLeave={() => setHoverLocation({ id: null, type: null })}
-                      >
-                        {record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude ? `${record.checkOutLatitude.toFixed(5)}, ${record.checkOutLongitude.toFixed(5)}` : 'N/A')}
-                      </div>
-                      {hoverLocation.id === record._id && hoverLocation.type === 'out' && (record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude)) && (
-                        <div style={styles.tooltip} role="tooltip">
-                          {record.checkOutLocationName || `${record.checkOutLatitude.toFixed(6)}, ${record.checkOutLongitude.toFixed(6)}`}
+                      <td style={styles.td}>{formatDate(record.date)}</td>
+                      <td style={styles.td}>{formatTime(record.checkIn)}</td>
+                      <td style={styles.td}>{formatTime(record.checkOut)}</td>
+                      <td style={styles.td}>{record.hoursWorked || 0}</td>
+                      <td style={{ ...styles.td, ...styles.statusCell }}>
+                        <span style={getStatusStyle(record.status)}>
+                          {record.status || 'N/A'}
+                        </span>
+                      </td>
+                      <td style={{ ...styles.td, position: 'relative' }}>
+                        <div
+                          style={styles.locationCell}
+                          onMouseEnter={() => setHoverLocation({ id: record._id, type: 'in' })}
+                          onMouseLeave={() => setHoverLocation({ id: null, type: null })}
+                        >
+                          {record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude ? `${record.checkInLatitude.toFixed(5)}, ${record.checkInLongitude.toFixed(5)}` : 'N/A')}
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                  ))
-                ) : (
+                        {/* floating tooltip removed; full-row expansion remains on hover */}
+                      </td>
+                      <td style={{ ...styles.td, position: 'relative' }}>
+                        <div
+                          style={styles.locationCell}
+                          onMouseEnter={() => setHoverLocation({ id: record._id, type: 'out' })}
+                          onMouseLeave={() => setHoverLocation({ id: null, type: null })}
+                        >
+                          {record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude ? `${record.checkOutLatitude.toFixed(5)}, ${record.checkOutLongitude.toFixed(5)}` : 'N/A')}
+                        </div>
+                        {/* floating tooltip removed; full-row expansion remains on hover */}
+                      </td>
+                    </tr>
+                  {hoverLocation.id === record._id && hoverLocation.type === 'in' && (record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude)) && (
+                    <tr key={`${record._id}-loc-in`} style={styles.fullRow}>
+                      <td colSpan={user.role === 'admin' ? 10 : 7} style={styles.fullRowCell}>
+                        <strong>Check In Location:</strong> {record.checkInLocationName || `${record.checkInLatitude.toFixed(6)}, ${record.checkInLongitude.toFixed(6)}`}
+                      </td>
+                    </tr>
+                  )}
+                  {hoverLocation.id === record._id && hoverLocation.type === 'out' && (record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude)) && (
+                    <tr key={`${record._id}-loc-out`} style={styles.fullRow}>
+                      <td colSpan={user.role === 'admin' ? 10 : 7} style={styles.fullRowCell}>
+                        <strong>Check Out Location:</strong> {record.checkOutLocationName || `${record.checkOutLatitude.toFixed(6)}, ${record.checkOutLongitude.toFixed(6)}`}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))
+              ) : (
                   <tr>
                     <td 
                       colSpan={user.role === 'admin' ? 8 : 5} 
@@ -305,21 +314,14 @@ const styles = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap'
   },
-  tooltip: {
-    position: 'absolute',
-    left: 0,
-    top: '100%',
-    transform: 'translateY(6px)',
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    color: 'white',
-    padding: '8px 10px',
-    borderRadius: '6px',
-    fontSize: '13px',
-    maxWidth: '320px',
-    zIndex: 50,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    whiteSpace: 'normal'
-  }
+  fullRow: {
+    backgroundColor: '#f9fafb'
+  },
+  fullRowCell: {
+    padding: '12px',
+    borderTop: '1px solid #e6e9ee'
+  },
+  // floating tooltip styles removed; using full-row expansion on hover
 };
 
 export default Attendance;
