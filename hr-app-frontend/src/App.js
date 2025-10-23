@@ -6,6 +6,7 @@ import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
 import HRDashboard from './components/HRDashboard';
 import Attendance from './components/Attendance';
+import AdminUsers from './components/AdminUsers';
 import Holidays from './components/Holidays';
 import Header from './components/Header';
 import { isAuthenticated, getUser } from './utils/auth';
@@ -119,6 +120,7 @@ function App() {
               {currentView === 'dashboard' && <HRDashboard />}
               {currentView === 'attendance' && <Attendance />}
               {currentView === 'holidays' && <Holidays />}
+              {currentView === 'users' && <AdminUsers />}
             </>
           ) : (
             <>

@@ -142,4 +142,7 @@ export const usersAPI = {
   })
 };
 
+// Approve user (admin)
+usersAPI.approveUser = (id) => apiRequest(`/users/${id}/approve`, { method: 'PUT' });
+
 export default apiRequest;

@@ -39,6 +39,14 @@ const Header = ({ onLogout, currentView, setCurrentView, userRole }) => {
             Holidays
           </button>
         )}
+        {userRole === 'admin' && (
+          <button 
+            onClick={() => setCurrentView('users')}
+            className={`nav-button ${currentView === 'users' ? 'active' : ''}`}
+          >
+            Users
+          </button>
+        )}
       </nav>
 
       <div className="user-info">
