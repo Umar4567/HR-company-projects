@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema({
     enum: ['employee', 'manager', 'admin'],
     default: 'employee'
   },
+  // Approval required by admin before user can use the system
+  approved: {
+    type: Boolean,
+    default: false
+  },
   resetPasswordToken: String,
   resetPasswordExpire: Date
   ,

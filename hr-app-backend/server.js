@@ -13,11 +13,13 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 const attendanceRoutes = require('./routes/attendance');
 const holidayRoutes = require('./routes/holidays'); // Add this line
+const userRoutes = require('./routes/users');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/holidays', holidayRoutes); // Add this line
+app.use('/api/users', userRoutes);
 // gps routes removed
 
 // Test route

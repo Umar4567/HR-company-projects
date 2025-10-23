@@ -35,7 +35,8 @@ const register = async (req, res) => {
       email,
       password,
       department,
-      role: 'employee'
+      role: 'employee',
+      approved: false // require admin approval before first use
     });
 
     if (user) {
@@ -79,6 +80,10 @@ const login = async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
 
     if (isPasswordValid) {
+      // Require admin approval for non-admin users
+      if (user.role !== 'admin' && !user.approved) {
+        return res.status(403).json({ message: 'Your account is awaiting admin approval.' });
+      }
       const token = generateToken(user._id);
       // Update login tracking
       try {
