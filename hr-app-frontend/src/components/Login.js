@@ -66,7 +66,7 @@ const Login = ({ onLogin, onForgotPassword }) => {
           <img src="/download.jpg" alt="Brand" className="login-image" />
         </div>
         <div style={{textAlign:'center', marginBottom: '6px'}}>
-          <div className="welcome-heading">Welcome to Incircle Jobs</div>
+          <div className="welcome-heading">Welcome to Innercircle Softech</div>
         </div>
         <h2>{isLogin ? 'Login' : 'Register'}</h2>
 

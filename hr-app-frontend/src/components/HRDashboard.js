@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { attendanceAPI } from '../services/api';
+import { attendanceAPI, usersAPI } from '../services/api';
 
 const HRDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -11,10 +11,12 @@ const HRDashboard = () => {
   });
   const [loading, setLoading] = useState(false);
   const [resultsCount, setResultsCount] = useState(null);
+  const [departments, setDepartments] = useState(['all']);
 
   useEffect(() => {
     fetchDashboardData();
-    fetchAllAttendance();
+    // Load attendance first then derive departments (users API fallback)
+    fetchAllAttendance().then(() => fetchDepartments()).catch(() => fetchDepartments());
   }, []);
 
   const fetchDashboardData = async () => {
@@ -40,6 +42,51 @@ const HRDashboard = () => {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      // Try users endpoint first
+      const usersResp = await usersAPI.getUsers();
+      let users = [];
+      if (Array.isArray(usersResp)) users = usersResp;
+      else if (usersResp && Array.isArray(usersResp.data)) users = usersResp.data;
+      else if (usersResp && Array.isArray(usersResp.users)) users = usersResp.users;
+
+      const deptSet = new Set();
+      users.forEach(u => { if (u.department) deptSet.add(u.department); });
+
+      // Fallback: scan attendance records already loaded
+      if (deptSet.size === 0) {
+        if (allAttendance && allAttendance.length > 0) {
+          allAttendance.forEach(r => { if (r.employee?.department) deptSet.add(r.employee.department); });
+        }
+        // If still empty, try fetching attendance directly as a last resort
+        if (deptSet.size === 0) {
+          try {
+            const resp = await attendanceAPI.getAllAttendance();
+            let records = [];
+            if (Array.isArray(resp)) records = resp;
+            else if (resp && Array.isArray(resp.attendance)) records = resp.attendance;
+            else if (resp && Array.isArray(resp.data)) records = resp.data;
+            else if (resp && Array.isArray(resp.records)) records = resp.records;
+            records.forEach(r => { if (r.employee?.department) deptSet.add(r.employee.department); });
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+
+      const deptArray = ['all', ...Array.from(deptSet).sort()];
+      setDepartments(deptArray);
+    } catch (error) {
+      console.warn('Could not fetch users for departments, deriving from attendance instead', error);
+      const deptSet = new Set();
+      if (allAttendance && allAttendance.length > 0) {
+        allAttendance.forEach(r => { if (r.employee?.department) deptSet.add(r.employee.department); });
+      }
+      setDepartments(['all', ...Array.from(deptSet).sort()]);
+    }
+  };
+
   const fetchAllAttendance = async (filterParams = {}) => {
     setLoading(true);
     try {
@@ -60,10 +107,12 @@ const HRDashboard = () => {
       else if (response && Array.isArray(response.records)) records = response.records;
       setAllAttendance(records);
       setResultsCount(records.length);
+      return records;
     } catch (error) {
       console.error('Error fetching attendance:', error);
       setAllAttendance([]);
       setResultsCount(0);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -246,11 +295,9 @@ const HRDashboard = () => {
             onChange={handleFilterChange}
             style={styles.filterInput}
           >
-            <option value="all">All Departments</option>
-            <option value="IT">IT</option>
-            <option value="HR">HR</option>
-            <option value="Finance">Finance</option>
-            <option value="Marketing">Marketing</option>
+            {departments.map((d) => (
+              <option key={d} value={d}>{d === 'all' ? 'All Departments' : d}</option>
+            ))}
           </select>
           <input
             type="text"

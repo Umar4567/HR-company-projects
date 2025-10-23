@@ -125,6 +125,34 @@ const Attendance = () => {
         </>
       )}
 
+      {/* For non-admin users show simple date filters to allow range queries */}
+      {user.role !== 'admin' && (
+        <form onSubmit={handleFilterSubmit} style={{ ...styles.filterForm, marginBottom: '1rem' }}>
+          <input
+            type="date"
+            name="startDate"
+            value={filters.startDate}
+            onChange={handleFilterChange}
+            style={styles.filterInput}
+          />
+          <input
+            type="date"
+            name="endDate"
+            value={filters.endDate}
+            onChange={handleFilterChange}
+            style={styles.filterInput}
+          />
+          <div style={{display:'flex',gap:'8px'}}>
+            <button type="submit" style={styles.filterButton} disabled={loading}>
+              {loading ? 'Applying...' : 'Apply'}
+            </button>
+            <button type="button" style={{...styles.filterButton, backgroundColor:'#6c757d'}} onClick={() => { setFilters({ startDate: '', endDate: '', name: '' }); fetchAttendance(); }}>
+              Reset
+            </button>
+          </div>
+        </form>
+      )}
+
       <div style={styles.tableContainer}>
         <table style={styles.table}>
             <thead>
@@ -174,7 +202,16 @@ const Attendance = () => {
                         >
                           {record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude ? `${record.checkInLatitude.toFixed(5)}, ${record.checkInLongitude.toFixed(5)}` : 'N/A')}
                         </div>
-                        {/* floating tooltip removed; full-row expansion remains on hover */}
+                        {hoverLocation.id === record._id && hoverLocation.type === 'in' && (record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude)) && (
+                          <div
+                            style={styles.locationPopover}
+                            onMouseEnter={() => setHoverLocation({ id: record._id, type: 'in' })}
+                            onMouseLeave={() => setHoverLocation({ id: null, type: null })}
+                          >
+                            <strong style={{display:'block', marginBottom:6}}>Check In Location</strong>
+                            <div>{record.checkInLocationName || `${record.checkInLatitude.toFixed(6)}, ${record.checkInLongitude.toFixed(6)}`}</div>
+                          </div>
+                        )}
                       </td>
                       <td style={{ ...styles.td, position: 'relative' }}>
                         <div
@@ -184,23 +221,19 @@ const Attendance = () => {
                         >
                           {record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude ? `${record.checkOutLatitude.toFixed(5)}, ${record.checkOutLongitude.toFixed(5)}` : 'N/A')}
                         </div>
-                        {/* floating tooltip removed; full-row expansion remains on hover */}
+                        {hoverLocation.id === record._id && hoverLocation.type === 'out' && (record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude)) && (
+                          <div
+                            style={styles.locationPopover}
+                            onMouseEnter={() => setHoverLocation({ id: record._id, type: 'out' })}
+                            onMouseLeave={() => setHoverLocation({ id: null, type: null })}
+                          >
+                            <strong style={{display:'block', marginBottom:6}}>Check Out Location</strong>
+                            <div>{record.checkOutLocationName || `${record.checkOutLatitude.toFixed(6)}, ${record.checkOutLongitude.toFixed(6)}`}</div>
+                          </div>
+                        )}
                       </td>
                     </tr>
-                  {hoverLocation.id === record._id && hoverLocation.type === 'in' && (record.checkInLocationName || (record.checkInLatitude && record.checkInLongitude)) && (
-                    <tr key={`${record._id}-loc-in`} style={styles.fullRow}>
-                      <td colSpan={user.role === 'admin' ? 10 : 7} style={styles.fullRowCell}>
-                        <strong>Check In Location:</strong> {record.checkInLocationName || `${record.checkInLatitude.toFixed(6)}, ${record.checkInLongitude.toFixed(6)}`}
-                      </td>
-                    </tr>
-                  )}
-                  {hoverLocation.id === record._id && hoverLocation.type === 'out' && (record.checkOutLocationName || (record.checkOutLatitude && record.checkOutLongitude)) && (
-                    <tr key={`${record._id}-loc-out`} style={styles.fullRow}>
-                      <td colSpan={user.role === 'admin' ? 10 : 7} style={styles.fullRowCell}>
-                        <strong>Check Out Location:</strong> {record.checkOutLocationName || `${record.checkOutLatitude.toFixed(6)}, ${record.checkOutLongitude.toFixed(6)}`}
-                      </td>
-                    </tr>
-                  )}
+                  {/* full-row expansion removed; using popover anchored inside the cell */}
                 </React.Fragment>
               ))
               ) : (
@@ -275,7 +308,7 @@ const styles = {
   },
   tableContainer: {
     overflowX: 'auto',
-    borderRadius: '8px',
+    borderRadius: '10px',
     border: '1px solid #e6e9ee',
     background: '#fff'
   },
@@ -289,8 +322,9 @@ const styles = {
   },
   th: {
     border: '1px solid #ddd',
-    padding: '12px',
-    textAlign: 'left',
+    padding: '10px 55px',
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
     backgroundColor: '#f3f4f6',
     fontWeight: 'bold',
     position: 'sticky',
@@ -300,19 +334,36 @@ const styles = {
   td: {
     border: '1px solid #eee',
     padding: '12px',
-    verticalAlign: 'top'
+    verticalAlign: 'top',
+    textAlign: 'center'
   },
   rowEven: {
     backgroundColor: '#ffffff'
   },
   rowOdd: {
-    backgroundColor: '#fbfbfc'
+    backgroundColor: '#fcfcfbff'
   },
   locationCell: {
     maxWidth: '220px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap'
+  },
+  locationPopover: {
+    position: 'absolute',
+    left: 0,
+    top: '100%',
+    marginTop: '6px',
+    background: 'white',
+    border: '2px solid #4a81e8ff',
+    boxShadow: '0 6px 16px rgba(15,23,42,0.08)',
+    padding: '10px',
+    borderRadius: '6px',
+    zIndex: 20,
+    minWidth: '220px',
+    maxWidth: '420px',
+    whiteSpace: 'normal',
+    textAlign: 'center'
   },
   fullRow: {
     backgroundColor: '#f9fafb'

@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
+const { sendResetEmail } = require('../utils/email');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -169,27 +170,57 @@ const forgotPassword = async (req, res) => {
     console.log('Password Reset URL:', resetUrl);
 
     try {
-      // Send email and capture nodemailer info (info may include Ethereal preview URL)
-      const info = await sendPasswordResetEmail(user.email, resetUrl);
+      // Build email content (same as previous HTML body)
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Password Reset Request</h2>
+          <p>You requested a password reset for your HR System account.</p>
+          <p>Click the button below to reset your password:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" 
+               style="background-color: #007bff; color: white; padding: 12px 24px; 
+                      text-decoration: none; border-radius: 4px; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p>This link will expire in 30 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #666; font-size: 12px;">
+            Or copy and paste this link in your browser:<br>
+            ${resetUrl}
+          </p>
+        </div>
+      `;
+
+      // Use shared mailer util which reads SMTP env vars (GMAIL_USER/GMAIL_PASS or provider)
+      const info = await sendResetEmail({
+        to: user.email,
+        subject: 'Password Reset Request - HR System',
+        html
+      });
+
+      // If running with Ethereal or test account, nodemailer may provide a preview URL
       const previewUrl = info && typeof nodemailer.getTestMessageUrl === 'function'
         ? nodemailer.getTestMessageUrl(info)
         : null;
 
-      res.json({ 
+      res.json({
         message: 'If an account with that email exists, a password reset link has been sent.',
-        resetUrl: resetUrl, // Remove this in production
-        previewUrl: previewUrl // present only when using Ethereal/test SMTP
+        // resetUrl included only for development convenience; remove in production
+        resetUrl: process.env.NODE_ENV === 'production' ? undefined : resetUrl,
+        previewUrl: previewUrl
       });
     } catch (emailError) {
       console.error('Email error:', emailError);
-      
+
       // Clear the reset token if email fails
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save();
-      
-      return res.status(500).json({ 
-        message: 'Error sending email. Please try again.' 
+
+      return res.status(500).json({
+        message: 'Error sending email. Please try again.'
       });
     }
 
@@ -254,77 +285,6 @@ const resetPassword = async (req, res) => {
       message: 'Server error during password reset',
       error: error.message 
     });
-  }
-};
-
-// Email sending function - FIXED (corrected function name)
-const sendPasswordResetEmail = async (email, resetUrl) => {
-  try {
-    // For development use Ethereal test account when no SMTP config provided
-    const testAccount = await nodemailer.createTestAccount();
-
-    // Allow SMTP configuration via environment variables for production
-    // Expected env vars: SMTP_HOST, SMTP_PORT, SMTP_SECURE (true/false), SMTP_USER, SMTP_PASS, EMAIL_FROM
-    let transporter;
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-      transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587', 10),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      });
-    } else {
-      // Use Ethereal test SMTP for development / local testing
-      transporter = nodemailer.createTransport({
-        host: testAccount.smtp.host,
-        port: testAccount.smtp.port,
-        secure: testAccount.smtp.secure,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass
-        }
-      });
-      console.log('Using Ethereal test account for sending email. Preview URL will be logged.');
-    }
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || '"HR System" <no-reply@example.com>',
-      to: email,
-      subject: 'Password Reset Request - HR System',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Password Reset Request</h2>
-          <p>You requested a password reset for your HR System account.</p>
-          <p>Click the button below to reset your password:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background-color: #007bff; color: white; padding: 12px 24px; 
-                      text-decoration: none; border-radius: 4px; display: inline-block;">
-              Reset Password
-            </a>
-          </div>
-          <p>This link will expire in 30 minutes.</p>
-          <p>If you didn't request this, please ignore this email.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #666; font-size: 12px;">
-            Or copy and paste this link in your browser:<br>
-            ${resetUrl}
-          </p>
-        </div>
-      `,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    
-    console.log('Password reset email preview:', nodemailer.getTestMessageUrl(info));
-    
-    return info;
-  } catch (error) {
-    console.error('Email sending error:', error);
-    throw error;
   }
 };
 

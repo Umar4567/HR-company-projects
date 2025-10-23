@@ -181,12 +181,19 @@ const getMyAttendance = async (req, res) => {
     
     let query = { employee: req.user.id };
     
-    if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
+      if (startDate || endDate) {
+        query.date = {};
+        if (startDate) {
+          const s = new Date(startDate);
+          s.setHours(0, 0, 0, 0);
+          query.date.$gte = s;
+        }
+        if (endDate) {
+          const e = new Date(endDate);
+          e.setHours(23, 59, 59, 999);
+          query.date.$lte = e;
+        }
+      }
 
     const attendance = await Attendance.find(query)
       .sort({ date: -1 })
